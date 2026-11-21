@@ -5,7 +5,7 @@ TASK="${1:-general_study}"
 ENERGY="${2:-peak}"
 
 log_stage() {
-  printf '[%s] %-10s -> %s\n' "$(date '+%H:%M:%S')" "$1" "$2"
+  printf '[%s] %-10s -> %s\n' "$(date '+%H:%M:%S')" "${1:-STAGE}" "${2:-}"
 }
 
 humor_check() {
@@ -32,7 +32,6 @@ NOTE="$(humor_check "$ENERGY")"
 log_stage "INIT" "task=$TASK | energy=$ENERGY | mode=$MODE"
 log_stage "COURTESY" "$NOTE"
 log_stage "HANDSHAKE" "ACK_ACTIVE | pid=$$ | status=READY"
-log_stage "MOTION"
-
+log_stage "MOTION" "MOTION_ACTIVE | status=LIVE | mode=$MODE"
 log_stage "EXECUTE" "1) Define target  2) Smallest check  3) Keep what works"
 log_stage "PEAK_GUARD" "Trim noise early; log next step before stopping."
