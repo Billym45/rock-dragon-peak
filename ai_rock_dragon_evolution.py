@@ -37,6 +37,9 @@ def gemini_live_check(prompt: str = "Reply with ONLY: ROCK_DRAGON_ONLINE") -> di
             .strip()
         )
         return {"gemini_status": "ONLINE", "gemini_reply": text or "EMPTY_RESPONSE"}
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        return {"gemini_status": "HTTP_ERROR", "gemini_reply": f"{exc.code}: {body[:240]}"}
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         return {"gemini_status": "OFFLINE_FALLBACK", "gemini_reply": str(exc)}
 
