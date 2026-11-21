@@ -1,7 +1,44 @@
 import json
+import os
 import subprocess
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+def gemini_live_check(prompt: str = "Reply with ONLY: ROCK_DRAGON_ONLINE") -> dict[str, str]:
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return {"gemini_status": "LOCAL_ONLY", "gemini_reply": "GEMINI_API_KEY not set"}
+
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash:generateContent?key={api_key}"
+    )
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}]
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        text = (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "")
+            .strip()
+        )
+        return {"gemini_status": "ONLINE", "gemini_reply": text or "EMPTY_RESPONSE"}
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return {"gemini_status": "OFFLINE_FALLBACK", "gemini_reply": str(exc)}
 
 
 def run_peak_algorithm(
@@ -36,6 +73,7 @@ def append_ledger(
     task: str,
     energy: str,
     stages: list[dict[str, str]],
+    gemini_info: dict[str, str],
     ledger_path: str = "~/builds/rock_dragon_peak_project/rock_dragon_peak_ledger.jsonl",
 ) -> Path:
     path = Path(ledger_path).expanduser()
@@ -48,6 +86,7 @@ def append_ledger(
         "status": "PASS",
         "handshake": "ACK_ACTIVE",
         "motion": "MOTION_ACTIVE",
+        "gemini": gemini_info,
         "stages": {s["stage"]: s["detail"] for s in stages},
     }
     with path.open("a", encoding="utf-8") as f:
@@ -78,11 +117,13 @@ def run_with_handshake(
         if not motion_ok:
             raise RuntimeError(f"Motion status missing on cycle {cycle}")
 
+        gemini_info = gemini_live_check()
+        print(f"[cycle {cycle}] GEMINI_LINK: {gemini_info['gemini_status']} | {gemini_info['gemini_reply']}")
         for item in stages:
             print(f"[cycle {cycle}] {item['stage']}: {item['detail']}")
 
         if log_to_ledger:
-            append_ledger(task=cycle_task, energy=energy, stages=stages)
+            append_ledger(task=cycle_task, energy=energy, stages=stages, gemini_info=gemini_info)
         last_stages = stages
     return last_stages
 
