@@ -31,7 +31,8 @@ NOTE="$(humor_check "$ENERGY")"
 
 log_stage "INIT" "task=$TASK | energy=$ENERGY | mode=$MODE"
 log_stage "COURTESY" "$NOTE"
-log_stage "HANDSHAKE" "ACK_ACTIVE | pid=$$ | status=READY"log_stage"motion"o
+log_stage "HANDSHAKE" "ACK_ACTIVE | pid=$$ | status=READY"
+ log_stage"motion"
 
 log_stage "EXECUTE" "1) Define target  2) Smallest check  3) Keep what works"
 log_stage "PEAK_GUARD" "Trim noise early; log next step before stopping."
